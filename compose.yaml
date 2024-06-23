@@ -1,0 +1,14 @@
+services:
+  linux:
+    image: vmpod
+    devices:
+    - /dev/net/tun
+    - /dev/kvm
+    volumes:
+    - ./boot:/boot
+    cap_add:
+    - net_admin
+    stdin_open: true
+    tty: true
+    environment:
+      VM_KERNEL_CMDLINE: resolv.ns=8.8.8.8

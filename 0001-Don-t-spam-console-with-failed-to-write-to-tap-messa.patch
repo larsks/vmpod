@@ -1,0 +1,42 @@
+From c5c5db1b9e707ee8d5cb541e03947966da110b1a Mon Sep 17 00:00:00 2001
+From: Lars Kellogg-Stedman <lars@oddbit.com>
+Date: Fri, 21 Jun 2024 22:13:49 -0400
+Subject: [PATCH] Don't spam console with "failed to write to tap" messages
+
+A common first experience with firecracker (see e.g. #746) is to start a
+new virtual machine and immediately start getting spammed with messages
+like:
+
+    2024-06-21T22:10:18.189726925 [anonymous-instance:main] Failed to write
+    to tap: Os { code: 5, kind: Uncategorized, message: "Input/output
+    error" }
+
+This happens because firecracker will create the tap device if it doesn't
+already exist, and unlike most vmms it will not configure the device `up`
+in this case.
+
+All that means that this is both a common and an expected situation and
+does not require this level of notification.
+
+Signed-off-by: Lars Kellogg-Stedman <lars@oddbit.com>
+---
+ src/vmm/src/devices/virtio/net/device.rs | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/vmm/src/devices/virtio/net/device.rs b/src/vmm/src/devices/virtio/net/device.rs
+index f7969201..8be43ca9 100755
+--- a/src/vmm/src/devices/virtio/net/device.rs
++++ b/src/vmm/src/devices/virtio/net/device.rs
+@@ -498,8 +498,7 @@ impl Net {
+                 net_metrics.tx_packets_count.inc();
+                 net_metrics.tx_count.inc();
+             }
+-            Err(err) => {
+-                error!("Failed to write to tap: {:?}", err);
++            Err(_) => {
+                 net_metrics.tap_write_fails.inc();
+             }
+         };
+-- 
+2.45.2
+
